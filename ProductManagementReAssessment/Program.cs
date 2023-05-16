@@ -6,7 +6,17 @@ namespace ProductManagementReAssessment
 {
     public class Product
     {
-        SqlConnection con = new SqlConnection("Server=US-CJB79S3; database=Assessment; Integrated Security=true");
+        SqlConnection con = new SqlConnection("Server=US-CJB79S3; database=Assessment; Integrated Security=true");       
+        DataSet ds;
+        SqlDataAdapter adp;
+        public Product()
+        {          
+            ds = new DataSet();
+            adp = new SqlDataAdapter("select * from ProductsManagement", con);         
+            adp.Fill(ds);
+           
+        }
+
         public void AddProduct()
         {
             Console.WriteLine("Enter the Product Name:");
@@ -17,33 +27,30 @@ namespace ProductManagementReAssessment
             int Pqua =Convert.ToInt32(Console.ReadLine());
             Console.WriteLine("Enter the Price:");
             decimal Ppri = Convert.ToDecimal(Console.ReadLine());
-            SqlDataAdapter adp1 = new SqlDataAdapter("select * from ProductsManagement", con);
-            DataSet ds = new DataSet();
-            adp1.Fill(ds);
+
             DataRow newrow = ds.Tables[0].NewRow();
+
+            var x = ds.Tables[0].AsEnumerable().Max(x => x["ProductID"]);
+            newrow["ProductID"] = Convert.ToInt16(x) +1;
             newrow["ProductName"] = Pnam;
             newrow["ProductDescription"] = Pdes;
             newrow["Quantity"] = Pqua;
             newrow["Price"] = Ppri;
             ds.Tables[0].Rows.Add(newrow);
-            SqlCommandBuilder builder = new SqlCommandBuilder(adp1);
-            adp1.Update(ds);
+            SqlCommandBuilder builder = new SqlCommandBuilder(adp);
+            adp.Update(ds);
             Console.WriteLine("Product Added Successfully");
         }
         public void ViewProduct()
         {
             Console.WriteLine("Enter Product ID to view:");
             int ID = Convert.ToInt16(Console.ReadLine());
-            SqlDataAdapter adp2 = new SqlDataAdapter($"select * from ProductsManagement Where ProductID ={ID}", con);
-            DataSet ds = new DataSet();
-            adp2.Fill(ds);
-            if (ds.Tables[0].Rows.Count > 0)
+
+            var row = ds.Tables[0].Select($"ProductID={ID}");
+            if (row.Length > 0)
             {
-                DataRow rows = ds.Tables[0].Rows[0];
-                Console.WriteLine("Product Name: {0}", rows["ProductName"]);
-                Console.WriteLine("Product Description: {0} ", rows["ProductDescription"]);
-                Console.WriteLine("Quantity: {0}", rows["Quantity"]);
-                Console.WriteLine("Price: {0}", rows["Price"]);
+                var rows = row[0];
+                Console.WriteLine($"ProductID : {rows["ProductID"]}\n ProductName : {rows["ProductName"]}\nProductDescription : {rows["ProductDescription"]}\nQuantity : {rows["Quantity"]}\nPrice : {rows["Price"]}");
             }
             else
             {
@@ -52,15 +59,12 @@ namespace ProductManagementReAssessment
         }
         public void ViewAllProducts()
         {
-            SqlDataAdapter adp3 = new SqlDataAdapter($"select * from ProductsManagement", con);
-            DataSet ds = new DataSet();
-            adp3.Fill(ds);
-            Console.WriteLine("ProductID|ProductName|ProductDescription|Quantity|Price");
+            Console.WriteLine("ProductID | ProductName | ProductDescription | Quantity | Price");
             for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
             {
                 for (int j = 0; j < ds.Tables[0].Columns.Count; j++)
                 {
-                    Console.Write($"{ds.Tables[0].Rows[i][j]}  | ");
+                    Console.Write($" {ds.Tables[0].Rows[i][j]} |");
                 }
                 Console.WriteLine();
             }
@@ -69,10 +73,9 @@ namespace ProductManagementReAssessment
         {
             Console.WriteLine("Enter the ProductID to Update");
             int ID = Convert.ToInt32(Console.ReadLine());
-            SqlDataAdapter adp4 = new SqlDataAdapter($"Select * from ProductsManagement where ProductID={ID}", con);
-            DataSet ds = new DataSet();
-            adp4.Fill(ds);
-            if (ds.Tables[0].Rows.Count > 0)
+
+            var rows = ds.Tables[0].Select($"ProductID={ID}");
+            if (rows.Length > 0)
             {            
                 Console.WriteLine("Enter Updated Product Name:");
                 string Pnamu = Console.ReadLine();
@@ -82,13 +85,13 @@ namespace ProductManagementReAssessment
                 int Pquau = Convert.ToInt32(Console.ReadLine());
                 Console.WriteLine("Enter the Price:");
                 decimal Ppriu = Convert.ToDecimal(Console.ReadLine());
-                DataRow row = ds.Tables[0].Rows[0];            
-                row["ProductName"] = Pnamu;
-                row["ProductDescription"] = Pdesu;
-                row["Quantity"] = Pquau;
-                row["Price"] = Ppriu;
-                SqlCommandBuilder builder = new SqlCommandBuilder(adp4);
-                adp4.Update(ds);
+
+                rows[0]["ProductName"] = Pnamu;
+                rows[0]["ProductDescription"] = Pdesu;
+                rows[0]["Quantity"] = Pquau;
+                rows[0]["Price"] = Ppriu;
+                SqlCommandBuilder builder = new SqlCommandBuilder(adp);
+                adp.Update(ds);
                 Console.WriteLine("Product Details Updated Successfully");
             }
             else
@@ -100,16 +103,14 @@ namespace ProductManagementReAssessment
         {
             Console.WriteLine("Enter the ProductID to Delete");
             int ID = Convert.ToInt32(Console.ReadLine());
-            SqlDataAdapter adp5 = new SqlDataAdapter($"Select * from ProductsManagement where ProductID={ID}", con);
-            DataSet ds = new DataSet();
-            adp5.Fill(ds);
-            if (ds.Tables[0].Rows.Count > 0)
+
+            var row = ds.Tables[0].Select($"ProductID={ID}");
+            if (row.Length > 0)
             {
-                DataRow row = ds.Tables[0].Rows[0];
-                row.Delete();
-                SqlCommandBuilder builder = new SqlCommandBuilder(adp5);
-                adp5.Update(ds);
-                Console.WriteLine("Product Details Deleted Successfully");
+                row[0].Delete();
+                SqlCommandBuilder builder = new SqlCommandBuilder(adp);
+                adp.Update(ds);
+                Console.WriteLine("Product Deleted Successfully");
             }
             else
             {
@@ -123,19 +124,19 @@ namespace ProductManagementReAssessment
         {
             Product p = new Product();
             string s;
+            AnsiConsole.Write(new FigletText(" Product Management App ").Centered().Color(Color.Blue));
             do
             {
                 try
                 {
-                    Console.WriteLine("--------------------------------------------------");
-                    AnsiConsole.MarkupLine($"[Yellow] Welcome to Product Management App [/]");
+                    Console.WriteLine("-----------------------------------------------------------------------------------------------------------------------");              
                     AnsiConsole.MarkupLine($"[green] 1. Create Notes [/] ");
                     AnsiConsole.MarkupLine($"[green] 2. View Product [/] ");
                     AnsiConsole.MarkupLine($"[green] 3. View All Products [/] ");
                     AnsiConsole.MarkupLine($"[green] 4. Update Product [/] ");
                     AnsiConsole.MarkupLine($"[green] 5. Delete Product [/]");
                     Console.WriteLine();
-                    AnsiConsole.MarkupLine($"[DarkRed] Enter your Choice [/]");
+                    AnsiConsole.MarkupLine($"[Red] Enter your Choice [/]");
                     int choice = Convert.ToInt32(Console.ReadLine());
                     switch (choice)
                     {
@@ -166,16 +167,16 @@ namespace ProductManagementReAssessment
                             }
                         default:
                             {
-                                Console.WriteLine("Wrong Choice Entered");
+                                AnsiConsole.MarkupLine($"[Red] Wrong Choice Entered [/]");
                                 break;
                             }
                     }
                 }
                 catch (FormatException)
                 {
-                    Console.WriteLine("Entered Values Will be only in Numbers");
+                    AnsiConsole.MarkupLine($"[Red] Entered Values Will be only in Numbers [/]");                  
                 }
-                Console.WriteLine("Do you wish to continue? [y/n] ");
+                AnsiConsole.MarkupLine($"[Yellow] Do you wish to continue? (y/n) [/]");
                 s = Console.ReadLine();
             } while (s.ToLower() == "y");
         }
